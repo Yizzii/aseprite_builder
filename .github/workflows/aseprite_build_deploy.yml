@@ -34,7 +34,7 @@ jobs:
         echo "::set-output name=version_info::${VERSION_INFO}"
     - name: Load version from cache
       id: version_check
-      uses: actions/cache@v2
+      uses: actions/cache@v3
       with:
         path: ${{ steps.version_info.outputs.latest_tag }}.txt
         key: cached_version
@@ -77,7 +77,7 @@ jobs:
         run: brew install ninja p7zip
       - name: Get Skia from cache
         id: skia-cache
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: skia
           key: skia-${{ matrix.os }}-cache
