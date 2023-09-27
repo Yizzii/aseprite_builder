@@ -9,7 +9,7 @@ on:
 
 env:
   BUILD_TYPE: Release
-  
+
 jobs:
   check-version:
     name: Check latest Aseprite release
@@ -59,16 +59,15 @@ jobs:
   build-aseprite:
     name: Build Aseprite
     needs: check-version
-    if: ${{ needs.check-version.outputs.should_build }}
     runs-on: ${{ matrix.os }}
     strategy:
        matrix:
          os: [windows-latest]
-       fail-fast: false    
+       fail-fast: false
     steps:
       - name: (Windows) Install dependencies
         if: matrix.os == 'windows-latest'
-        uses: seanmiddleditch/gha-setup-ninja@v3
+        uses: seanmiddleditch/gha-setup-ninja@master
       - name: (Ubuntu) Install dependencies
         if: matrix.os == 'ubuntu-latest'
         run: sudo apt install -y cmake ninja-build libxcursor-dev libxi-dev libgl1-mesa-dev
@@ -84,7 +83,7 @@ jobs:
       - name: Download Skia if not in cache
         if: steps.skia-cache.outputs.cache-hit != 'true'
         run: |
-          curl -o Skia-${{ runner.os }}-Release-X64.zip -L https://github.com/aseprite/skia/releases/download/m81-b607b32047/Skia-${{ runner.os }}-Release-X64.zip
+          curl -o Skia-${{ runner.os }}-Release-X64.zip -L https://github.com/aseprite/skia/releases/download/m102-861e4743af/Skia-${{ runner.os }}-Release-X64.zip
           unzip Skia-${{ runner.os }}-Release-X64.zip -d skia
       - name: Download Aseprite release
         run: |
@@ -93,11 +92,10 @@ jobs:
           mkdir -p aseprite/build
       - name: (Windows) Set architecture for the produced binary
         if: matrix.os == 'windows-latest'
-        shell: cmd
-        run: call "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\Common7\Tools\VsDevCmd.bat" -arch=x64
+        uses: ilammy/msvc-dev-cmd@v1
       - name: (Windows) Setting Visual Studio build environment variables and paths
         if: matrix.os == 'windows-latest'
-        uses: seanmiddleditch/gha-setup-vsdevenv@v1
+        uses: seanmiddleditch/gha-setup-vsdevenv@master
       - name: (Windows) Run CMake
         if: matrix.os == 'windows-latest'
         working-directory: aseprite/build
@@ -125,11 +123,9 @@ jobs:
         working-directory: aseprite/build/bin
         run: 7z -tzip a Aseprite-${{ needs.check-version.outputs.latest_tag }}-${{ runner.os }}.zip *
       - name: Upload release
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        uses: svenstaro/upload-release-action@v2
         with:
-          upload_url: ${{ needs.check-version.outputs.upload_url }}
-          asset_path: aseprite/build/bin/Aseprite-${{ needs.check-version.outputs.latest_tag }}-${{ runner.os }}.zip
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: aseprite/build/bin/Aseprite-${{ needs.check-version.outputs.latest_tag }}-${{ runner.os }}.zip
           asset_name: Aseprite-${{ needs.check-version.outputs.latest_tag }}-${{ runner.os }}.zip
-          asset_content_type: application/zip
+          tag: ${{ github.ref }}
